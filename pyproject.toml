@@ -1,0 +1,41 @@
+[project]
+name = "catalog-copilot"
+version = "0.1.0"
+description = "LLM-powered product catalog assistant for PIM: RAG search with citations, supplier attribute extraction, and taxonomy classification."
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.143.3",
+    "pydantic-settings>=2.16.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[project.scripts]
+catalog-copilot = "catalog_copilot.main:run"
+
+[build-system]
+requires = ["uv_build>=0.13.1,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.13.1",
+    "mypy>=2.4.0",
+    "pytest>=9.1.1",
+    "ruff>=0.17.1",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"
+packages = ["catalog_copilot"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
