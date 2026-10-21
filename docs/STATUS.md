@@ -22,6 +22,9 @@ Phase 3: Scaffold done. Next: Phase 4, milestone 1 of 6.
 - 2026-10-17: Hosting = Fly.io (user chose it over free Render + Neon).
 - 2026-10-17: Repo created by user as **public**, Apache-2.0, and kept public. Strict secrets hygiene (.env + GitHub Secrets only).
 - 2026-10-17: Python 3.12 via uv (system Python is 3.9).
+- 2026-10-20: Added a query-understanding step: hard limits (price, gender, brand, size,
+  color) are parsed into SQL filters before retrieval; soft preferences stay in the semantic
+  query. Rule-based parser in M1, LLM parser in M2, constraint eval cases in M4.
 
 ## Pending / blocked
 - User accounts needed by M2/M3: Anthropic API key (prepaid credits), Fly.io account, LangSmith (free). OpenAI key optional.

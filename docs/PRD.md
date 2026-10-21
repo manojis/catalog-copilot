@@ -18,6 +18,8 @@ naive LLM tools invent specs that aren't in the source data.
 **Must have**
 - **Catalog search & Q&A:** ask natural-language questions about the catalog and get
   answers grounded in real products, with citations (product IDs/links) for every claim.
+  Search matches meaning, not just keywords, and hard limits stated in the question
+  (price, gender, brand, size) are enforced exactly rather than approximated.
 - **"I don't know" behavior:** if the catalog doesn't contain the answer, say so
   instead of inventing it.
 - **Supplier attribute extraction:** upload a messy supplier CSV/PDF and get product
@@ -50,6 +52,8 @@ naive LLM tools invent specs that aren't in the source data.
 - A first-time visitor can open the live URL and get a cited answer within 10 seconds.
 - Golden eval set (50+ questions): faithfulness >= 0.85, answer relevancy >= 0.80;
   on out-of-catalog questions, correctly declines >= 90% of the time.
+- On questions with stated limits ("under $100", "women's"), >= 95% of returned products
+  satisfy every limit.
 - Attribute extraction: >= 90% field-level accuracy on a labeled sample of 100 products.
 - Taxonomy classification: >= 80% top-1 accuracy at taxonomy level 3 on a labeled sample.
 - 100% of the prompt-injection test cases are blocked.
