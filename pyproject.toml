@@ -4,13 +4,20 @@ version = "0.1.0"
 description = "LLM-powered product catalog assistant for PIM: RAG search with citations, supplier attribute extraction, and taxonomy classification."
 requires-python = ">=3.12"
 dependencies = [
+    "alembic>=1.20.1",
     "fastapi>=0.143.3",
+    "fastembed>=0.9.1",
+    "httpx>=0.28.1",
+    "pgvector>=0.5.1",
+    "psycopg[binary]>=3.3.9",
     "pydantic-settings>=2.16.0",
+    "sqlalchemy>=2.1.9",
     "uvicorn[standard]>=0.54.0",
 ]
 
 [project.scripts]
 catalog-copilot = "catalog_copilot.main:run"
+catalog-copilot-ingest = "catalog_copilot.ingest.cli:main"
 
 [build-system]
 requires = ["uv_build>=0.13.1,<0.14.0"]
@@ -22,6 +29,7 @@ dev = [
     "mypy>=2.4.0",
     "pytest>=9.1.1",
     "ruff>=0.17.1",
+    "testcontainers[postgres]>=4.15.0",
 ]
 
 [tool.ruff]
@@ -35,7 +43,12 @@ select = ["E", "F", "I", "B", "UP", "SIM"]
 python_version = "3.12"
 strict = true
 mypy_path = "src"
-packages = ["catalog_copilot"]
+files = ["src", "tests", "migrations"]
+
+[[tool.mypy.overrides]]
+module = ["testcontainers.*", "docker.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["integration: needs Docker (runs a temporary Postgres container)"]
