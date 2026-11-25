@@ -218,3 +218,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local datasets and snapshots (downloaded by catalog-copilot-ingest)
+/data/
