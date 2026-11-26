@@ -57,5 +57,31 @@ See README Quick start: docker compose → alembic upgrade → ingest download +
 - [ ] Step 5: `GET /search`
 - [ ] Step 6: end-to-end testing (incl. constraint satisfaction)
 
+### M1 pieces by side
+
+"Ingest" runs once per product to fill the database; "Shopper" runs on every search.
+
+| Step | Side | Piece | Status | What it does |
+|---|---|---|---|---|
+| 1 | Ingest | Postgres + pgvector container | done | Database that stores products, vectors and the keyword index |
+| 1 | Ingest | `products` table (Alembic migration 0001) | done | Creates the table and its 4 indexes as a versioned migration |
+| 2 | Ingest | download | done | Saves the first 30K usable raw records to a local snapshot file |
+| 2 | Ingest | clean | done | Picks out brand, price, gender, color, material; builds `search_text` |
+| 2 | Ingest | embed (`passage_embed`) | done | Turns each `search_text` into 384 numbers with BGE-small |
+| 2 | Ingest | load (upsert, 256 per batch) | done | Writes products + vectors; re-running updates, never duplicates |
+| 2 | Ingest | `search_tsv` (built by Postgres) | done | Postgres auto-builds keyword-search data from title, brand and text |
+| 3 | Both | shared `vocabulary.py` | next | One gender/color list used by ingest and the parser, so values match |
+| 3 | Shopper | query parser | next | Splits "women's black boots under $100" into filters + leftover text |
+| 3 | Shopper | table-driven parser tests | next | One row per query, incl. traps like "Under Armour", "black friday" |
+| 4 | Shopper | keyword search | to do | Filtered full-text search on `search_tsv`, top 50 |
+| 4 | Shopper | vector search (`query_embed`) | to do | Embeds the leftover text and finds the 50 nearest filtered products |
+| 4 | Shopper | RRF merge | to do | Combines both ranked lists using rank positions only |
+| 4 | Shopper | rerank (cross-encoder) | to do | MiniLM rescores the merged (query, product) pairs and keeps the best |
+| 5 | Shopper | `GET /search?q=...` | to do | The API the shopper calls; returns ranked products as JSON |
+| 6 | Both | end-to-end tests | to do | Real queries on real data; "under $100" results really are under $100 |
+| Later | Ingest | full-refresh mode | later | Removes rows that a stricter cleaning rule now rejects |
+| Later | Ingest | HNSW index (migration 0002) | later | Fast approximate vector search for the 1M scale run |
+| Later | Ingest | 1M load + recall check | later | Measures HNSW vs exact search on real embeddings |
+
 ## Pending / blocked
 - User accounts needed by M2/M3: Anthropic API key (prepaid credits), Fly.io account, LangSmith (free). OpenAI key optional.
