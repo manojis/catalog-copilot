@@ -44,129 +44,15 @@ query. Both use the same embedding model, so product vectors and query vectors a
    price / brand / attributes (filter columns)                                    top results (/search)
 ```
 
-### Ingest, step by step
+### Ingest in short
 
-Ingest is two commands, so a cleaning change only needs a re-`load`, not a new download. The
-snapshot is a frozen copy of the input, which makes every load reproducible.
+`download` streams the dataset and saves the first N usable products unchanged to `data/raw/`
+(a reproducible snapshot). `load` reads that file, cleans each record, builds one labeled
+product string (`search_text`), embeds it with BGE-small, and inserts-or-updates the products in
+Postgres in batches of 256. Postgres builds the keyword index (`search_tsv`) itself.
 
-#### Command 1: `catalog-copilot-ingest download --limit 30000`
-
-Goal: get 30K usable products from the internet into a local file.
-
-```
- ┌─ cli.py ──────────────────────────────────────────────────────────┐
- │ reads the command ("download", limit 30000) and starts the work   │
- └──────────────────────────────┬────────────────────────────────────┘
-                                ▼
- ┌─ pipeline.py (download_snapshot) ─────────────────────────────────┐
- │ runs the download loop                                            │
- │                                                                   │
- │   source.py   streams the 18 GB Amazon file from Hugging Face,    │
- │               one product record at a time                        │
- │        │                                                          │
- │        ▼                                                          │
- │   clean.py    checks each record: "is this usable?"               │
- │               (has an id, a title, and a price of $1 or more)     │
- │        │                                                          │
- │        ├─ not usable → skip it, count the reason                  │
- │        └─ usable     → write the record UNCHANGED to the file     │
- │                                                                   │
- │   stop once 30,000 usable records are saved                       │
- └──────────────────────────────┬────────────────────────────────────┘
-                                ▼
-           data/raw/clothing_30000.jsonl.gz   (22 MB, local, git-ignored)
-```
-
-Result: 56,543 records read, 30,000 kept, 26,543 skipped (no price), in about 7 seconds. The file is
-filtered only to pick usable records; the data inside is still raw.
-
-#### Command 2: `catalog-copilot-ingest load --limit 30000`
-
-Goal: read that local file, clean it, embed it, and insert it into Postgres.
-
-```
- ┌─ cli.py ──────────────────────────────────────────────────────────┐
- │ reads the command ("load") and starts the work                    │
- │ loads the BGE model once (embeddings.py)                          │
- └──────────────────────────────┬────────────────────────────────────┘
-                                ▼
- ┌─ pipeline.py (load_products) ─────────────────────────────────────┐
- │                                                                   │
- │ ① source.py     READS the downloaded file                         │
- │                 data/raw/clothing_30000.jsonl.gz, one record at   │
- │                 a time                                            │
- │        ▼                                                          │
- │ ② clean.py      CLEANS each record:                               │
- │                 price → 99.95   brand → ASICS   gender → women    │
- │                 color → black   category → Women > Shoes > ...    │
- │                 and builds search_text                            │
- │        ▼                                                          │
- │ ③ pipeline.py   groups the clean products into batches of 256     │
- │        ▼                                                          │
- │ ④ embeddings.py EMBEDS each batch's search_text with BGE          │
- │                 → 384 numbers per product                         │
- │        ▼                                                          │
- │ ⑤ pipeline.py   INSERTS the batch into the products table         │
- │                 (if a product already exists, it's updated        │
- │                  instead of duplicated)                           │
- │        │                                                          │
- │        │  uses: db/session.py  → the connection to Postgres       │
- │        │        config.py      → the database address             │
- │        │        db/models.py   → what the products table looks    │
- │        │                         like                             │
- │        ▼                                                          │
- │   repeat ①–⑤ until the file is finished                           │
- └──────────────────────────────┬────────────────────────────────────┘
-                                ▼
- ┌─ Postgres (in Docker) ────────────────────────────────────────────┐
- │ products table: one row per product, with search_text + embedding │
- │ Postgres fills in search_tsv (keyword data) by itself             │
- └───────────────────────────────────────────────────────────────────┘
-```
-
-Result: about 13 minutes for 30,000 products on a laptop CPU; almost all of it is step ④, embedding.
-Because inserts are idempotent, re-running `load` updates rows in place instead of duplicating them.
-
-#### Each file's job in one line
-
-| File (`src/catalog_copilot/`) | Job |
-|---|---|
-| `ingest/cli.py` | the command you type; decides whether to download or load |
-| `ingest/pipeline.py` | runs the steps in order: the "manager" |
-| `ingest/source.py` | reads records: from the internet (download) or from the local file (load) |
-| `ingest/clean.py` | checks and cleans each record, and builds `search_text` |
-| `embeddings.py` | turns `search_text` into 384 numbers with BGE (`embed_query` serves search later) |
-| `db/models.py` | describes the `products` table (schema changes go through Alembic) |
-| `db/session.py` + `config.py` | connect to Postgres (settings come from `CC_*` environment variables) |
-
-### What a stored product looks like
-
-`clean.py` turns a raw record into one labeled **product string**, `search_text`. This exact text is
-what BGE embeds and what the reranker reads:
-
-```
-ASICS Women's GT-2000 9 Running Shoes. Brand: ASICS. Category: Women > Shoes > Athletic >
-Running > Road Running. Gender: women. Features: Synthetic-and-mesh Imported Rubber sole ...
-```
-
-Price is deliberately **not** in `search_text`: numbers are enforced by SQL filters, not embeddings.
-Features are cut at 500 characters (longer text embeds slower for little extra meaning).
-
-| Column | Filled by | Used for |
-|---|---|---|
-| `search_text` | ingest | the reranker reads it; debugging what was embedded |
-| `embedding` `vector(384)` | ingest (BGE-small, `passage_embed`) | vector search: matches meaning ("breathable" ≈ "mesh") |
-| `search_tsv` `tsvector` | **Postgres** (generated column: title weight A, brand B, `search_text` C) | keyword search: exact words ("wide", "2E", brand names), GIN index |
-| `price`, `brand`, `attributes` (JSONB: gender, color, material) | ingest | hard filters from the query parser |
-
-There is no vector index at this size: an exact scan over 30K vectors takes ~12 ms. HNSW is planned
-for the 1M scale run (measured: ~6 ms vs ~212 ms at 1M, but a 26-minute build and approximate
-results). See [docs/STATUS.md](docs/STATUS.md) for the measurements.
-
-### Data quality notes
-- 47% of raw records have no price and are skipped; prices below $1 are placeholders and rejected.
-- Coverage at 30K: brand 100% (from `store`), gender 98%, color 15% (listed or read from the
-  title), material 4%. The dataset has no per-variant sizes, so there is no size filter.
+Step-by-step diagrams, the role of each file, a real stored product and data quality notes:
+**[docs/INGEST.md](docs/INGEST.md)**.
 
 ## Development
 
@@ -202,12 +88,15 @@ migrations/versions/        Alembic migrations (0001: products table)
 tests/unit/                 fast tests, no Docker (table-driven where rules have many cases)
 tests/integration/          tests against a throwaway Postgres container (testcontainers)
 data/raw/                   downloaded snapshots (git-ignored)
+docs/                       PRD, DESIGN, STATUS, INGEST, adr/ (architecture decision records)
 ```
 
 ## Docs
 - [Product requirements](docs/PRD.md)
 - [Technical design](docs/DESIGN.md)
 - [Status](docs/STATUS.md)
+- [Ingest](docs/INGEST.md)
+- [Architecture decision records](docs/adr/README.md)
 
 ## Data
 Product data from [Amazon Reviews 2023](https://amazon-reviews-2023.github.io/) (McAuley Lab),

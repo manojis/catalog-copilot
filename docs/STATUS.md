@@ -1,6 +1,6 @@
 # Status: catalog-copilot
 
-_Last updated: 2026-11-24. Update this file at the end of every milestone._
+_Last updated: 2026-11-26. Update this file at the end of every milestone._
 
 ## Current phase
 Phase 4: building M1 (step 2 of 6 done).
@@ -45,6 +45,9 @@ See README Quick start: docker compose → alembic upgrade → ingest download +
   only ~5% of products, so it falls back to the first color word in the title; no per-variant size
   data, so the size filter is out of scope for M1. Prices below $1 are placeholders ($0.01)
   and are rejected. Coverage at 30K: brand 100%, gender 98%, color 15%, material 4%.
+- 2026-11-26: Docs reorganized: detailed ingest docs moved from README to `docs/INGEST.md`;
+  major decisions recorded as ADRs in `docs/adr/` (0001-0007); DESIGN/PRD corrected (no size
+  filter, ingest command, measured scan latency).
 
 ## M1 progress
 - [x] Step 1: Postgres + pgvector (docker compose), `products` model, migration 0001, tests
