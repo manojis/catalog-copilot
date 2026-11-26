@@ -1,11 +1,12 @@
 """Turn one raw Amazon record into a validated ProductRecord (pure functions, no I/O)."""
 
 import html
-import re
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from pydantic import BaseModel
+
+from catalog_copilot.vocabulary import COLOR_PATTERN, Color, Gender, canonical_color
 
 ROOT_CATEGORY = "Clothing, Shoes & Jewelry"
 # Below $1 the dataset has placeholder prices ($0.01 rings, sunglasses ...), not real ones.
@@ -14,8 +15,8 @@ MAX_PRICE = Decimal("10000")
 MAX_FEATURES_CHARS = 500  # longer text = slower embedding, little extra signal
 MAX_DESCRIPTION_CHARS = 2000
 
-# details["Department"] values seen in the data -> our gender filter values
-GENDER_BY_DEPARTMENT = {
+# details["Department"] values seen in the data -> our stored gender values
+GENDER_BY_DEPARTMENT: dict[str, Gender] = {
     "womens": "women",
     "women": "women",
     "mens": "men",
@@ -31,21 +32,13 @@ GENDER_BY_DEPARTMENT = {
     "unisex-baby": "baby",
 }
 # Fallback when Department is missing: categories[1] ("Women", "Men", ...)
-GENDER_BY_CATEGORY = {
+GENDER_BY_CATEGORY: dict[str, Gender] = {
     "Women": "women",
     "Men": "men",
     "Girls": "girls",
     "Boys": "boys",
     "Baby": "baby",
 }
-
-COLORS = (
-    "black", "white", "gray", "navy", "blue", "red", "green", "pink", "purple", "brown",
-    "beige", "yellow", "orange", "gold", "silver", "khaki", "tan", "ivory", "burgundy",
-    "olive", "teal", "maroon", "cream", "charcoal",
-)  # fmt: skip
-COLOR_ALIASES = {"grey": "gray"}
-_COLOR_RE = re.compile(r"\b(" + "|".join((*COLORS, *COLOR_ALIASES)) + r")\b", re.IGNORECASE)
 
 MATERIAL_KEYS = ("Material", "Material Type", "Fabric Type")
 
@@ -87,7 +80,7 @@ def parse_price(value: Any) -> Decimal | None:
     return price
 
 
-def normalize_gender(details: dict[str, Any], categories: list[str]) -> str | None:
+def normalize_gender(details: dict[str, Any], categories: list[str]) -> Gender | None:
     department = normalize_text(details.get("Department")).lower()
     if department in GENDER_BY_DEPARTMENT:
         return GENDER_BY_DEPARTMENT[department]
@@ -96,12 +89,11 @@ def normalize_gender(details: dict[str, Any], categories: list[str]) -> str | No
     return None
 
 
-def extract_color(details: dict[str, Any], title: str) -> str | None:
+def extract_color(details: dict[str, Any], title: str) -> Color | None:
     """The listed color if it names a known color, else the first known color word in the title."""
     for text in (normalize_text(details.get("Color")), title):
-        if match := _COLOR_RE.search(text):
-            word = match.group(1).lower()
-            return COLOR_ALIASES.get(word, word)
+        if match := COLOR_PATTERN.search(text):
+            return canonical_color(match.group(1))
     return None
 
 
