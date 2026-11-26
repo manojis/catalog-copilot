@@ -1,6 +1,6 @@
 # PRD: catalog-copilot
 
-_Last updated: 2026-10-17_
+_Last updated: 2026-11-26_
 
 ## Problem
 Product catalogs are large, inconsistent, and slow to work with. Merchandisers and shoppers
@@ -19,7 +19,7 @@ naive LLM tools invent specs that aren't in the source data.
 - **Catalog search & Q&A:** ask natural-language questions about the catalog and get
   answers grounded in real products, with citations (product IDs/links) for every claim.
   Search matches meaning, not just keywords, and hard limits stated in the question
-  (price, gender, brand, size) are enforced exactly rather than approximated.
+  (price, gender, brand, color) are enforced exactly rather than approximated.
 - **"I don't know" behavior:** if the catalog doesn't contain the answer, say so
   instead of inventing it.
 - **Supplier attribute extraction:** upload a messy supplier CSV/PDF and get product
@@ -36,7 +36,7 @@ naive LLM tools invent specs that aren't in the source data.
 - **Swappable LLM provider:** switch providers through config, not code changes.
 
 **Should have** (build if cheap, else roadmap)
-- Filters combined with search (price range, size, brand).
+- Filters combined with search (price range, brand, gender, color).
 - Side-by-side eval comparison of two LLM providers in the README.
 - Request tracing dashboard (LangSmith) linked from the README.
 

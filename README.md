@@ -20,10 +20,39 @@ uv run catalog-copilot-ingest load --limit 30000       # clean + embed + load (~
 uv run catalog-copilot     # http://127.0.0.1:8000/health  (API docs at /docs)
 ```
 
-Ingest is two stages: `download` streams the dataset and saves the first N usable products
-unchanged (a reproducible raw snapshot); `load` cleans them, embeds `search_text` with
-BGE-small, and upserts into Postgres. `load` is idempotent, so re-running it after changing a
-cleaning rule updates rows in place. Use `--limit` for other sizes (e.g. 1000000 for a scale run).
+Use `--limit` for other sizes (e.g. `1000000` for a scale run). To browse the data, connect any
+Postgres client to host `localhost`, port `5432`, database/user/password `catalog` (local dev only).
+
+## How it works
+
+The system has two sides. **Ingest** prepares the products once; **search** answers each shopper
+query. Both use the same embedding model, so product vectors and query vectors are comparable.
+
+```
+ INGEST (offline, once)                          SEARCH (every request)        [M1: in progress]
+ ──────────────────────                          ──────────────────────
+ Amazon dataset (18 GB, streamed)                "women's black running shoes under $100"
+        │ download                                      │ parse_query
+        ▼                                               ├─ filters: gender=women, color=black,
+ data/raw/clothing_30000.jsonl.gz                       │           price<=100   → SQL WHERE
+        │ load: clean → search_text → embed              └─ semantic_text: "running shoes"
+        ▼                                                       │
+ Postgres `products` ───────────────────────────────►  keyword search (search_tsv)  ┐
+   search_text   (the product string)                   vector search (embedding)    ├→ RRF → rerank
+   embedding     (384 numbers, BGE-small)                                            ┘      │
+   search_tsv    (keyword index, built by Postgres)                                         ▼
+   price / brand / attributes (filter columns)                                    top results (/search)
+```
+
+### Ingest in short
+
+`download` streams the dataset and saves the first N usable products unchanged to `data/raw/`
+(a reproducible snapshot). `load` reads that file, cleans each record, builds one labeled
+product string (`search_text`), embeds it with BGE-small, and inserts-or-updates the products in
+Postgres in batches of 256. Postgres builds the keyword index (`search_tsv`) itself.
+
+Step-by-step diagrams, the role of each file, a real stored product and data quality notes:
+**[docs/INGEST.md](docs/INGEST.md)**.
 
 ## Development
 
@@ -47,10 +76,27 @@ uv run alembic downgrade -1      # roll back the last migration
 uv run alembic check             # fails if models and migrations have drifted
 ```
 
+### Project layout
+
+```
+src/catalog_copilot/
+  main.py, config.py        FastAPI app and settings
+  embeddings.py             BGE-small embeddings (shared by ingest and search)
+  db/                       SQLAlchemy models and sessions
+  ingest/                   download + load pipeline
+migrations/versions/        Alembic migrations (0001: products table)
+tests/unit/                 fast tests, no Docker (table-driven where rules have many cases)
+tests/integration/          tests against a throwaway Postgres container (testcontainers)
+data/raw/                   downloaded snapshots (git-ignored)
+docs/                       PRD, DESIGN, STATUS, INGEST, adr/ (architecture decision records)
+```
+
 ## Docs
 - [Product requirements](docs/PRD.md)
 - [Technical design](docs/DESIGN.md)
 - [Status](docs/STATUS.md)
+- [Ingest](docs/INGEST.md)
+- [Architecture decision records](docs/adr/README.md)
 
 ## Data
 Product data from [Amazon Reviews 2023](https://amazon-reviews-2023.github.io/) (McAuley Lab),
