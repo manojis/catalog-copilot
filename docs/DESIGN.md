@@ -137,6 +137,12 @@ So each query is split before retrieval:
 (30K, same filters): "outfit for a beach wedding" 6 of 50, "something for my wife" 10, "warm winter
 coat" 18, "Nike running shoes" 43. Each finds products the other misses, so RRF merges them.
 
+**RRF merge** (`search/fusion.py`): each product scores `1 / (60 + rank)` in each list it appears in,
+summed. Only positions count, because `ts_rank_cd` and cosine distance are on different scales.
+A product both searches rank well beats one that only a single search ranks first: for "warm winter
+coat" the top fused result was keyword #2 / vector #6, while keyword #1 (vector #27) fell to 6th.
+Ties go to the better single rank, then id. 100 candidates merge to ~80-90 unique in < 0.1 ms.
+
 ## Data model
 - **products:** `id` (ASIN), `title`, `brand`, `category_path`, `price`, `attributes` (JSONB:
   gender, color, material), `description`, `url`, `search_text` (the product string that BGE
