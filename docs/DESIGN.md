@@ -173,6 +173,24 @@ once by `create_search_service()` (~0.8 s); each search uses a fresh DB session.
   floor or "low confidence" flag is a candidate for the eval-driven tuning in M4 and the "I don't know"
   behavior in M2; not applied yet because scores are relative.
 
+## Search API (M1 step 5)
+`GET /search?q=...&limit=10` in `src/catalog_copilot/main.py`, returning `SearchResponse` as JSON
+(example in the README).
+- **Startup:** FastAPI's lifespan builds the `SearchService` once (models + brand list, ~0.7 s). If the
+  database is unreachable the app refuses to start and logs the URL with the password masked (fail
+  fast: a service without its brand list would silently parse worse; the platform restarts it).
+- **Plain `def` endpoint**, not `async def`: search blocks on the database and model inference, so
+  FastAPI runs it in a worker thread instead of blocking the event loop for every request.
+- **Validation at the edge:** `q` 1-500 characters (the parser reads at most 500), `limit` 1-50;
+  violations return 422 before any search runs. Both are documented at `/docs` (OpenAPI).
+- **Errors:** a database `OperationalError` during a search returns 503 "temporarily unavailable";
+  the cause is logged, not returned.
+- **Testability:** the service is injected with `Depends(get_search_service)`; HTTP tests override it
+  with a stub (unit) or a service built from fake models on the test database (integration).
+- **Logging:** `configure_logging()` sets up the app's own loggers (uvicorn only configures its own),
+  so each search logs its query, result count and per-stage timings. Level: `CC_LOG_LEVEL`.
+- Prices are JSON strings (Pydantic's Decimal encoding): exact, no float rounding.
+
 ## Data model
 - **products:** `id` (ASIN), `title`, `brand`, `category_path`, `price`, `attributes` (JSONB:
   gender, color, material), `description`, `url`, `search_text` (the product string that BGE

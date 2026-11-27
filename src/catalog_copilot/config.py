@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="CC_", extra="ignore")
 
     env: str = "dev"
+    log_level: str = "INFO"
     host: str = "127.0.0.1"
     port: int = 8000
     database_url: str = "postgresql://catalog:catalog@localhost:5432/catalog"

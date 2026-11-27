@@ -23,6 +23,35 @@ uv run catalog-copilot     # http://127.0.0.1:8000/health  (API docs at /docs)
 Use `--limit` for other sizes (e.g. `1000000` for a scale run). To browse the data, connect any
 Postgres client to host `localhost`, port `5432`, database/user/password `catalog` (local dev only).
 
+### Search the catalog
+
+```bash
+curl -G http://127.0.0.1:8000/search \
+  --data-urlencode "q=women's black running shoes under \$100" --data-urlencode "limit=3"
+```
+```jsonc
+{
+  "query": "women's black running shoes under $100",
+  "parsed": { "price_max": "100", "price_max_inclusive": false,   // price < 100
+              "gender": "women", "color": "black", "brands": [],
+              "semantic_text": "running shoes", ... },
+  "results": [
+    { "id": "B0BBSBNPZ6", "title": "JCONGUW ... Running Shoes ...", "brand": "JCONGUW",
+      "price": "33.99", "url": "https://www.amazon.com/dp/B0BBSBNPZ6",
+      "attributes": { "color": "black", "gender": "unisex" },
+      "rerank_score": 6.30, "keyword_rank": 1, "vector_rank": 1, "rrf_rank": 1 },
+    ...
+  ],
+  "candidates": 68,
+  "timings_ms": { "parse": 0.4, "keyword": 12.7, "embed": 4.0, "vector": 6.7, "rerank": 323.1, "total": 354.0, ... }
+}
+```
+- `q`: 1-500 characters; `limit`: 1-50 (default 10). Invalid values return 422.
+- Prices are strings (exact decimals, no float rounding).
+- Each result shows where it ranked in keyword search, vector search and RRF, plus the reranker's
+  score (`null` ranks = that search didn't find it; filter-only queries like "Nike" have no scores).
+- 503 means the database is unreachable. Interactive docs: http://127.0.0.1:8000/docs
+
 ## How it works
 
 The system has two sides. **Ingest** prepares the products once; **search** answers each shopper
