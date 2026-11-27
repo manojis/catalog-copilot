@@ -57,8 +57,8 @@ Embeddings match meaning ("breathable" ~ "mesh upper") but not numbers or hard l
 So each query is split before retrieval:
 ```
 "breathable running shoes for wide feet under $100"
-  -> { "semantic_query": "breathable running shoes for wide feet",
-       "filters": { "price_max": 100 } }
+  -> ParsedQuery(semantic_text="breathable running shoes for wide feet",
+                 price_max=100, price_max_inclusive=False)      # price < 100
 ```
 - **Hard constraints -> SQL filters.** `price_min/price_max`, `gender`, `brand` and `color`
   become a `WHERE` clause applied to *both* the keyword and vector searches, so top-k is drawn
@@ -69,6 +69,16 @@ So each query is split before retrieval:
   ambiguous words ("black friday", "cheap") stay in the semantic query.
 - **Rule order:** brands first (longest names first, so "Under Armour" isn't read as
   "under $100" and "New Balance" beats "Balance"), then price, gender, color; whole words only.
+- **Price bounds say whether they include their value:** "under/below/less than $100" is
+  `price < 100`; "up to/at most $100" is `<= 100`; "over $50" is `> 50`; "at least $50" and
+  "$50+" are `>= 50`; "$50-$80" and "between 50 and 80" include both ends. A bare number counts
+  only after "under/below/less than/between"; other phrases need "$" or "dollars", and numbers
+  followed by a unit ("under 18 months") are never prices. Conflicting phrases create no filter.
+- **Brands come from the catalog, minus everyday words.** The ~12.5K store names are loaded once
+  at startup (~0.4 s). A name is skipped when other brands' titles use it more often than it has
+  products of its own ("Comfort", "Polo", "Mini"), and placeholders like "Generic" are never
+  brands. A matched brand also covers catalog brands that start with it ("adidas" also matches
+  "adidas Originals"), because adding a related brand only adds results.
 - **Shared vocabulary:** the query parser and ingest use the same gender and color values
   (e.g. "grey" -> `gray` on both sides), so query filters always match stored attributes.
 - **Soft preferences -> ranking.** "breathable", "wide feet", "for hiking" stay in the

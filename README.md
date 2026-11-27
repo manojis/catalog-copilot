@@ -82,8 +82,10 @@ uv run alembic check             # fails if models and migrations have drifted
 src/catalog_copilot/
   main.py, config.py        FastAPI app and settings
   embeddings.py             BGE-small embeddings (shared by ingest and search)
+  vocabulary.py             gender/color values shared by ingest and the query parser
   db/                       SQLAlchemy models and sessions
   ingest/                   download + load pipeline
+  search/                   query parser (filters + leftover text), brand matching
 migrations/versions/        Alembic migrations (0001: products table)
 tests/unit/                 fast tests, no Docker (table-driven where rules have many cases)
 tests/integration/          tests against a throwaway Postgres container (testcontainers)

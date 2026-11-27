@@ -27,3 +27,17 @@ COLOR_PATTERN: Final = re.compile(r"\b(" + "|".join(_CANONICAL_COLOR) + r")\b", 
 def canonical_color(word: str) -> Color | None:
     """The stored color value for a color word ("Grey" -> "gray"), or None if it isn't one."""
     return _CANONICAL_COLOR.get(word.lower())
+
+
+# How shoppers write each gender, after apostrophes are removed ("women's" -> "womens").
+# Plurals and possessives only: a singular "girl" or "boy" in a query is often a print or a
+# style ("girl power tee", "boyfriend jeans"), not who the product is for.
+GENDER_WORDS: Final[dict[str, Gender]] = {
+    "women": "women", "womens": "women", "ladies": "women",
+    "men": "men", "mens": "men",
+    "girls": "girls",
+    "boys": "boys",
+    "kids": "kids", "children": "kids", "childrens": "kids",
+    "baby": "baby", "babys": "baby", "infant": "baby", "infants": "baby",
+    "unisex": "unisex",
+}  # fmt: skip
