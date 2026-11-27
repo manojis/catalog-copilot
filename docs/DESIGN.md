@@ -79,6 +79,13 @@ So each query is split before retrieval:
   products of its own ("Comfort", "Polo", "Mini"), and placeholders like "Generic" are never
   brands. A matched brand also covers catalog brands that start with it ("adidas" also matches
   "adidas Originals"), because adding a related brand only adds results.
+- **Gender filters are generous** (`GENDER_MATCHES` in `vocabulary.py`): "women" also returns
+  unisex products, "men" too; "kids" returns kids + girls + boys; "girls"/"boys" also return kids.
+  Adding a product that fits only adds results; leaving it out hides it. Products with no gender
+  (~2%) are excluded whenever a gender filter applies.
+- **Filters use the indexes:** brand as `lower(brand) IN (...)` (expression index), gender and color
+  as JSONB containment `attributes @> '{"color": "black"}'` (GIN index; `->>` can't use it). All
+  values are bound parameters.
 - **Shared vocabulary:** the query parser and ingest use the same gender and color values
   (e.g. "grey" -> `gray` on both sides), so query filters always match stored attributes.
 - **Soft preferences -> ranking.** "breathable", "wide feet", "for hiking" stay in the

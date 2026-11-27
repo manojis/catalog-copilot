@@ -3,7 +3,13 @@
 import pytest
 
 from catalog_copilot.ingest.clean import GENDER_BY_CATEGORY, GENDER_BY_DEPARTMENT
-from catalog_copilot.vocabulary import COLOR_PATTERN, COLORS, GENDERS, canonical_color
+from catalog_copilot.vocabulary import (
+    COLOR_PATTERN,
+    COLORS,
+    GENDER_MATCHES,
+    GENDERS,
+    canonical_color,
+)
 
 
 def test_ingest_gender_mappings_only_produce_shared_values() -> None:
@@ -43,3 +49,10 @@ def test_color_pattern_matches_whole_words(text: str, expected: list[str]) -> No
 def test_every_color_is_lowercase_and_unique() -> None:
     assert all(color == color.lower() for color in COLORS)
     assert len(set(COLORS)) == len(COLORS)
+
+
+def test_every_gender_filter_includes_itself_and_only_known_genders() -> None:
+    assert set(GENDER_MATCHES) == set(GENDERS)
+    for gender, matches in GENDER_MATCHES.items():
+        assert gender in matches
+        assert set(matches) <= set(GENDERS)

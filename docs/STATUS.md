@@ -51,6 +51,9 @@ See README Quick start: docker compose → alembic upgrade → ingest download +
 - 2026-11-26: "Under $100" means `price < 100` (user decision). `ParsedQuery` records whether
   each price bound is inclusive. Brands are matched from the catalog, skipping names that other
   brands' titles use more often than the brand has products (197 of ~12.7K skipped at 30K).
+- 2026-11-26: Gender filters are generous (user chose option A): women/men include unisex, kids
+  includes girls and boys, girls/boys include kids. At 30K: "women" matches 18,549 products
+  (17,368 women + 1,181 unisex), "kids" 2,809.
 
 ## M1 progress
 - [x] Step 1: Postgres + pgvector (docker compose), `products` model, migration 0001, tests
