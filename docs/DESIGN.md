@@ -125,6 +125,18 @@ So each query is split before retrieval:
 - Negation ("not leather") isn't supported in M1: "not" is a stop word, so "leather" is searched.
   The M2 LLM parser handles exclusions.
 
+**Vector search** (pgvector, top 50):
+- `vector_search(session, query_vector, filters)`: `ORDER BY embedding <=> :query_vector` (cosine
+  distance), id as tie-breaker. It takes the vector, not the text: the service embeds once with
+  BGE `query_embed` (the model that embedded products at ingest), and tests use hand-made vectors.
+- Exact scan over the filtered rows (no vector index at 30K, ADR 0006). Measured: BGE embedding
+  ~2-3 ms; search ~46-53 ms with no filters (all 29,990 rows), ~3-4 ms when filters narrow the rows
+  first (e.g. women + black + under $100 = 482 rows).
+
+**Why both searches:** their top 50s overlap little for vague queries and a lot for specific ones
+(30K, same filters): "outfit for a beach wedding" 6 of 50, "something for my wife" 10, "warm winter
+coat" 18, "Nike running shoes" 43. Each finds products the other misses, so RRF merges them.
+
 ## Data model
 - **products:** `id` (ASIN), `title`, `brand`, `category_path`, `price`, `attributes` (JSONB:
   gender, color, material), `description`, `url`, `search_text` (the product string that BGE

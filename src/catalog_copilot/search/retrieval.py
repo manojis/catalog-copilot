@@ -10,7 +10,7 @@ from sqlalchemy import ColumnElement, Select, cast, func, select
 from sqlalchemy.dialects.postgresql import REGCONFIG
 from sqlalchemy.orm import Session
 
-from catalog_copilot.db.models import TEXT_SEARCH_CONFIG, Product
+from catalog_copilot.db.models import EMBEDDING_DIM, TEXT_SEARCH_CONFIG, Product
 
 CANDIDATE_LIMIT = 50
 
@@ -57,3 +57,27 @@ def _ranked(
         .order_by(rank.desc(), Product.id)  # id breaks ties, so results are repeatable
         .limit(limit)
     )
+
+
+def vector_search(
+    session: Session,
+    query_vector: Sequence[float],
+    filters: Sequence[ColumnElement[bool]] = (),
+    limit: int = CANDIDATE_LIMIT,
+) -> list[str]:
+    """The products whose stored embedding is closest to the query vector (cosine distance).
+
+    ``query_vector`` comes from ``Embedder.embed_query`` (BGE), the same model that embedded the
+    products at ingest; vectors from different models can't be compared. With no vector index
+    (ADR 0006) this is an exact scan: every product that passes the filters is compared.
+    """
+    if len(query_vector) != EMBEDDING_DIM:
+        raise ValueError(f"query vector has {len(query_vector)} numbers, expected {EMBEDDING_DIM}")
+    distance = Product.embedding.cosine_distance(list(query_vector))  # SQL: embedding <=> :vector
+    stmt = (
+        select(Product.id)
+        .where(*filters)
+        .order_by(distance, Product.id)  # smallest distance first; id breaks ties
+        .limit(limit)
+    )
+    return list(session.scalars(stmt))
