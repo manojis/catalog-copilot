@@ -18,6 +18,7 @@ dependencies = [
 [project.scripts]
 catalog-copilot = "catalog_copilot.main:run"
 catalog-copilot-ingest = "catalog_copilot.ingest.cli:main"
+catalog-copilot-eval-constraints = "catalog_copilot.evals.constraints:main"
 
 [build-system]
 requires = ["uv_build>=0.13.1,<0.14.0"]
@@ -51,4 +52,8 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["integration: needs Docker (runs a temporary Postgres container)"]
+markers = [
+    "integration: needs Docker (runs a temporary Postgres container)",
+    "e2e: needs the loaded local catalog and real models (run with: pytest -m e2e)",
+]
+addopts = "-m 'not e2e'"
