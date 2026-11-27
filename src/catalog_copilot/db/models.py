@@ -11,10 +11,12 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 EMBEDDING_DIM = 384  # BAAI/bge-small-en-v1.5
 
 # Keyword search terms, built by Postgres. Title words weigh most (A), then brand (B), then rest.
+# Search queries must use the same text-search config, or query words stem differently.
+TEXT_SEARCH_CONFIG = "english"
 SEARCH_TSV_EXPR = (
-    "setweight(to_tsvector('english', coalesce(title, '')), 'A') || "
-    "setweight(to_tsvector('english', coalesce(brand, '')), 'B') || "
-    "setweight(to_tsvector('english', search_text), 'C')"
+    f"setweight(to_tsvector('{TEXT_SEARCH_CONFIG}', coalesce(title, '')), 'A') || "
+    f"setweight(to_tsvector('{TEXT_SEARCH_CONFIG}', coalesce(brand, '')), 'B') || "
+    f"setweight(to_tsvector('{TEXT_SEARCH_CONFIG}', search_text), 'C')"
 )
 
 

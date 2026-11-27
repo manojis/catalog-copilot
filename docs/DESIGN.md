@@ -105,6 +105,26 @@ So each query is split before retrieval:
 - **Transparency:** the UI shows the applied filters as chips ("price <= $100") so users can
   see and remove a wrong interpretation.
 
+## Retrieval (M1 step 4)
+`src/catalog_copilot/search/retrieval.py`. Both searches take the same SQL filters
+(`search/filters.py`) and return product ids, best first; only the order matters to RRF.
+
+**Keyword search** (Postgres full-text on `search_tsv`, top 50):
+- **All words first, then any word.** `websearch_to_tsquery` requires every word. That is precise
+  for short queries but starves long ones (measured at 30K: "rain jacket" 174 matches, "breathable
+  running shoes for wide feet" 4, "non slip shoes for nurses" 13). When the all-words query returns
+  fewer than 50, products matching *any* word fill the remaining slots, always ranked below every
+  all-words match (progressive relaxation).
+- **Ranking: `ts_rank_cd`** (cover density: rewards query words close together; uses the title A >
+  brand B > text C weights). Plain `ts_rank` saturates near 1.0 under AND, so top results tie.
+  Ties are broken by product id so results are repeatable.
+- Queries use the same text-search config as `search_tsv` (`TEXT_SEARCH_CONFIG = "english"`), or
+  query words would stem differently from stored words.
+- Latency at 30K: 1.5-4 ms when all words fill 50; 35-67 ms when the any-word pass runs (it ranks
+  thousands of loose matches). Acceptable next to the reranker; revisit at the 1M scale run.
+- Negation ("not leather") isn't supported in M1: "not" is a stop word, so "leather" is searched.
+  The M2 LLM parser handles exclusions.
+
 ## Data model
 - **products:** `id` (ASIN), `title`, `brand`, `category_path`, `price`, `attributes` (JSONB:
   gender, color, material), `description`, `url`, `search_text` (the product string that BGE

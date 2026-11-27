@@ -14,6 +14,7 @@ def make_product(
     price: str = "10.00",
     attributes: dict[str, Any] | None = None,
     embedding: list[float] | None = None,
+    search_text: str | None = None,
 ) -> Product:
     return Product(
         id=asin,
@@ -21,6 +22,6 @@ def make_product(
         brand=brand,
         price=Decimal(price),
         attributes=attributes or {},
-        search_text=title,
+        search_text=search_text or title,
         embedding=embedding or [0.0] * EMBEDDING_DIM,
     )
