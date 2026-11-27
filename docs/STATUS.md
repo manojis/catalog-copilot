@@ -3,7 +3,7 @@
 _Last updated: 2026-11-26. Update this file at the end of every milestone._
 
 ## Current phase
-Phase 4: building M1 (steps 1-4 of 6 built; step 4 in review as PR #5).
+Phase 4: building M1 (steps 1-5 of 6 built; step 5 not yet merged).
 
 ## Milestones
 - [ ] M1 Catalog + hybrid search: **in progress**
@@ -60,13 +60,16 @@ See README Quick start: docker compose → alembic upgrade → ingest download +
   (`CC_RERANK_CANDIDATES`): all ~85 took ~780 ms, the top 30 ~240 ms. Filter-only queries list
   products cheapest first. A search takes 200-350 ms at 30K (reranker 170-320 ms of it).
 - 2026-11-26: Commit messages carry the reasoning (Decisions + Measured sections), not just the change.
+- 2026-11-26: `GET /search` (step 5): service built once at startup, fail fast if the database is
+  unreachable; sync endpoint (blocking work runs in a worker thread); 422 for bad `q`/`limit`, 503 for
+  database outages; app logging configured so each search logs its timings.
 
 ## M1 progress
 - [x] Step 1: Postgres + pgvector (docker compose), `products` model, migration 0001, tests
 - [x] Step 2: ingest 30K products (download, clean, embed, load): 29,990 loaded, 12.6 min
 - [x] Step 3: rule-based query parser + table-driven tests (PRs #3, #4)
 - [x] Step 4: filters, keyword + vector retrieval, RRF, rerank, `search()` service (PR #5)
-- [ ] Step 5: `GET /search`
+- [x] Step 5: `GET /search` (branch `feat/m1-search-api`)
 - [ ] Step 6: end-to-end testing (incl. constraint satisfaction)
 
 ### M1 pieces by side
@@ -91,8 +94,8 @@ See README Quick start: docker compose → alembic upgrade → ingest download +
 | 4 | Shopper | RRF merge | done | Combines both ranked lists using rank positions only |
 | 4 | Shopper | rerank (cross-encoder) | done | MiniLM rescores the RRF top 30 (full `search_text`) and keeps the best |
 | 4 | Shopper | `search()` service | done | Runs the whole pipeline; per-stage timings; filter-only queries |
-| 5 | Shopper | `GET /search?q=...` | next | The API the shopper calls; returns ranked products as JSON |
-| 6 | Both | end-to-end tests | to do | Real queries on real data; "under $100" results really are under $100 |
+| 5 | Shopper | `GET /search?q=...` | done | The API the shopper calls; returns ranked products as JSON |
+| 6 | Both | end-to-end tests | next | Real queries on real data; "under $100" results really are under $100 |
 | Later | Ingest | full-refresh mode | later | Removes rows that a stricter cleaning rule now rejects |
 | Later | Ingest | HNSW index (migration 0002) | later | Fast approximate vector search for the 1M scale run |
 | Later | Ingest | 1M load + recall check | later | Measures HNSW vs exact search on real embeddings |
