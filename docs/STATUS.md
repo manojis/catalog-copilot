@@ -3,7 +3,7 @@
 _Last updated: 2026-11-26. Update this file at the end of every milestone._
 
 ## Current phase
-Phase 4: building M1 (step 2 of 6 done).
+Phase 4: building M1 (steps 1-3 of 6 built; step 3 not yet merged).
 
 ## Milestones
 - [ ] M1 Catalog + hybrid search: **in progress**
@@ -48,11 +48,14 @@ See README Quick start: docker compose → alembic upgrade → ingest download +
 - 2026-11-26: Docs reorganized: detailed ingest docs moved from README to `docs/INGEST.md`;
   major decisions recorded as ADRs in `docs/adr/` (0001-0007); DESIGN/PRD corrected (no size
   filter, ingest command, measured scan latency).
+- 2026-11-26: "Under $100" means `price < 100` (user decision). `ParsedQuery` records whether
+  each price bound is inclusive. Brands are matched from the catalog, skipping names that other
+  brands' titles use more often than the brand has products (197 of ~12.7K skipped at 30K).
 
 ## M1 progress
 - [x] Step 1: Postgres + pgvector (docker compose), `products` model, migration 0001, tests
 - [x] Step 2: ingest 30K products (download, clean, embed, load): 29,990 loaded, 12.6 min
-- [ ] Step 3: rule-based query parser + table-driven tests
+- [x] Step 3: rule-based query parser + table-driven tests (PR #3 + branch `feat/m1-query-parser-rules`)
 - [ ] Step 4: keyword + vector retrieval, RRF, rerank
 - [ ] Step 5: `GET /search`
 - [ ] Step 6: end-to-end testing (incl. constraint satisfaction)
@@ -70,10 +73,10 @@ See README Quick start: docker compose → alembic upgrade → ingest download +
 | 2 | Ingest | embed (`passage_embed`) | done | Turns each `search_text` into 384 numbers with BGE-small |
 | 2 | Ingest | load (upsert, 256 per batch) | done | Writes products + vectors; re-running updates, never duplicates |
 | 2 | Ingest | `search_tsv` (built by Postgres) | done | Postgres auto-builds keyword-search data from title, brand and text |
-| 3 | Both | shared `vocabulary.py` | next | One gender/color list used by ingest and the parser, so values match |
-| 3 | Shopper | query parser | next | Splits "women's black boots under $100" into filters + leftover text |
-| 3 | Shopper | table-driven parser tests | next | One row per query, incl. traps like "Under Armour", "black friday" |
-| 4 | Shopper | keyword search | to do | Filtered full-text search on `search_tsv`, top 50 |
+| 3 | Both | shared `vocabulary.py` | done | One gender/color list used by ingest and the parser, so values match |
+| 3 | Shopper | query parser | done | Splits "women's black boots under $100" into filters + leftover text |
+| 3 | Shopper | table-driven parser tests | done | One row per query, incl. traps like "Under Armour", "black friday" |
+| 4 | Shopper | keyword search | next | Filtered full-text search on `search_tsv`, top 50 |
 | 4 | Shopper | vector search (`query_embed`) | to do | Embeds the leftover text and finds the 50 nearest filtered products |
 | 4 | Shopper | RRF merge | to do | Combines both ranked lists using rank positions only |
 | 4 | Shopper | rerank (cross-encoder) | to do | MiniLM rescores the merged (query, product) pairs and keeps the best |
