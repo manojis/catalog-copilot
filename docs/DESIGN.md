@@ -143,6 +143,17 @@ A product both searches rank well beats one that only a single search ranks firs
 coat" the top fused result was keyword #2 / vector #6, while keyword #1 (vector #27) fell to 6th.
 Ties go to the better single rank, then id. 100 candidates merge to ~80-90 unique in < 0.1 ms.
 
+**Rerank** (`search/rerank.py`, MiniLM cross-encoder `Xenova/ms-marco-MiniLM-L-6-v2`): reads the
+query and one product's text together and returns one relevance score (an unbounded logit, higher =
+more relevant). Behind a `Reranker` Protocol so tests use a fake.
+- **Input text = the full `search_text`** (title, brand, category, attributes, features). The longest
+  are ~240 MiniLM tokens (median 151), well inside the 512-token limit. Dropping the features changed
+  6 of the top 10 (agreement with full text: 4.0 / 10), so features stay.
+- **Only the RRF top 30 are scored** (`CC_RERANK_CANDIDATES`, default 30). Cost grows with the number
+  of candidates: all ~85 took ~780 ms on an 18-core laptop, the top 30 ~160-240 ms and kept 7.8 of the
+  full-rerank top 10 (titles only: 153 ms but 4.0 / 10). Lower it on small servers; M4 evals tune it.
+- Equal scores keep the incoming RRF order.
+
 ## Data model
 - **products:** `id` (ASIN), `title`, `brand`, `category_path`, `price`, `attributes` (JSONB:
   gender, color, material), `description`, `url`, `search_text` (the product string that BGE
