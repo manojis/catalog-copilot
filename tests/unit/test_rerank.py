@@ -5,14 +5,7 @@ from collections.abc import Sequence
 import pytest
 
 from catalog_copilot.search.rerank import rerank
-
-
-class WordOverlapReranker:
-    """Scores a document by how many query words it contains."""
-
-    def score(self, query: str, documents: Sequence[str]) -> list[float]:
-        words = set(query.lower().split())
-        return [float(len(words & set(doc.lower().split()))) for doc in documents]
+from tests.fakes import WordOverlapReranker
 
 
 class BrokenReranker:

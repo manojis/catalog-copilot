@@ -154,6 +154,25 @@ more relevant). Behind a `Reranker` Protocol so tests use a fake.
   full-rerank top 10 (titles only: 153 ms but 4.0 / 10). Lower it on small servers; M4 evals tune it.
 - Equal scores keep the incoming RRF order.
 
+**The `search()` service** (`search/service.py`): `SearchService.search(query, limit=10)` runs parse ->
+filters -> keyword -> embed -> vector -> RRF -> fetch -> rerank and returns a `SearchResponse` (the
+parsed query, results, candidate count and per-stage timings). Models and the brand list are loaded
+once by `create_search_service()` (~0.8 s); each search uses a fresh DB session.
+- Each `SearchHit` carries its keyword, vector and RRF positions plus the rerank score, so any ranking
+  can be explained and evaluated (M4).
+- The reranker reads `semantic_text`, not the full query: filters are already enforced by SQL, and
+  "under $100" would only distract it.
+- It scores `max(limit, rerank_candidates)` candidates, so every returned result has been reranked
+  even when the setting is lowered on a small server. `limit` is 1-50.
+- **Filter-only queries** ("Nike", "women's black under $100") have nothing to rank by meaning: matching
+  products are listed cheapest first (stable and explainable; the catalog has no popularity field yet).
+- Measured on the 30K catalog (18-core laptop): 200-350 ms per search, of which the reranker is
+  170-320 ms; filter-only ~6 ms.
+- Observation for M4: rerank scores are all negative for vague queries ("something for my wife": -2.2
+  to -2.8) and a weak extra result can scrape into the top 5 (joggers at -6.3 among hoodies). A score
+  floor or "low confidence" flag is a candidate for the eval-driven tuning in M4 and the "I don't know"
+  behavior in M2; not applied yet because scores are relative.
+
 ## Data model
 - **products:** `id` (ASIN), `title`, `brand`, `category_path`, `price`, `attributes` (JSONB:
   gender, color, material), `description`, `url`, `search_text` (the product string that BGE
