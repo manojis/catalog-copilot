@@ -3,7 +3,7 @@
 _Last updated: 2026-11-26. Update this file at the end of every milestone._
 
 ## Current phase
-Phase 4: building M1 (steps 1-3 of 6 built; step 3 not yet merged).
+Phase 4: building M1 (steps 1-4 of 6 built; step 4 in review as PR #5).
 
 ## Milestones
 - [ ] M1 Catalog + hybrid search: **in progress**
@@ -54,12 +54,18 @@ See README Quick start: docker compose → alembic upgrade → ingest download +
 - 2026-11-26: Gender filters are generous (user chose option A): women/men include unisex, kids
   includes girls and boys, girls/boys include kids. At 30K: "women" matches 18,549 products
   (17,368 women + 1,181 unisex), "kids" 2,809.
+- 2026-11-26: Retrieval (step 4, details in DESIGN "Retrieval"): keyword search requires all words,
+  then fills with any-word matches when fewer than 50; vector search is an exact scan; RRF merges by
+  rank. The reranker reads the full `search_text` but only for the RRF top 30
+  (`CC_RERANK_CANDIDATES`): all ~85 took ~780 ms, the top 30 ~240 ms. Filter-only queries list
+  products cheapest first. A search takes 200-350 ms at 30K (reranker 170-320 ms of it).
+- 2026-11-26: Commit messages carry the reasoning (Decisions + Measured sections), not just the change.
 
 ## M1 progress
 - [x] Step 1: Postgres + pgvector (docker compose), `products` model, migration 0001, tests
 - [x] Step 2: ingest 30K products (download, clean, embed, load): 29,990 loaded, 12.6 min
-- [x] Step 3: rule-based query parser + table-driven tests (PR #3 + branch `feat/m1-query-parser-rules`)
-- [ ] Step 4: keyword + vector retrieval, RRF, rerank
+- [x] Step 3: rule-based query parser + table-driven tests (PRs #3, #4)
+- [x] Step 4: filters, keyword + vector retrieval, RRF, rerank, `search()` service (PR #5)
 - [ ] Step 5: `GET /search`
 - [ ] Step 6: end-to-end testing (incl. constraint satisfaction)
 
@@ -79,11 +85,13 @@ See README Quick start: docker compose → alembic upgrade → ingest download +
 | 3 | Both | shared `vocabulary.py` | done | One gender/color list used by ingest and the parser, so values match |
 | 3 | Shopper | query parser | done | Splits "women's black boots under $100" into filters + leftover text |
 | 3 | Shopper | table-driven parser tests | done | One row per query, incl. traps like "Under Armour", "black friday" |
-| 4 | Shopper | keyword search | next | Filtered full-text search on `search_tsv`, top 50 |
-| 4 | Shopper | vector search (`query_embed`) | to do | Embeds the leftover text and finds the 50 nearest filtered products |
-| 4 | Shopper | RRF merge | to do | Combines both ranked lists using rank positions only |
-| 4 | Shopper | rerank (cross-encoder) | to do | MiniLM rescores the merged (query, product) pairs and keeps the best |
-| 5 | Shopper | `GET /search?q=...` | to do | The API the shopper calls; returns ranked products as JSON |
+| 4 | Shopper | filters → SQL | done | Price (< vs <=), brand, generous gender, color as indexed WHERE conditions |
+| 4 | Shopper | keyword search | done | Filtered full-text search on `search_tsv`: all words first, then any word, top 50 |
+| 4 | Shopper | vector search (`query_embed`) | done | Embeds the leftover text and finds the 50 nearest filtered products |
+| 4 | Shopper | RRF merge | done | Combines both ranked lists using rank positions only |
+| 4 | Shopper | rerank (cross-encoder) | done | MiniLM rescores the RRF top 30 (full `search_text`) and keeps the best |
+| 4 | Shopper | `search()` service | done | Runs the whole pipeline; per-stage timings; filter-only queries |
+| 5 | Shopper | `GET /search?q=...` | next | The API the shopper calls; returns ranked products as JSON |
 | 6 | Both | end-to-end tests | to do | Real queries on real data; "under $100" results really are under $100 |
 | Later | Ingest | full-refresh mode | later | Removes rows that a stricter cleaning rule now rejects |
 | Later | Ingest | HNSW index (migration 0002) | later | Fast approximate vector search for the 1M scale run |
