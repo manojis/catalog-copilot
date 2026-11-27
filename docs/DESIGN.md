@@ -79,6 +79,13 @@ So each query is split before retrieval:
   products of its own ("Comfort", "Polo", "Mini"), and placeholders like "Generic" are never
   brands. A matched brand also covers catalog brands that start with it ("adidas" also matches
   "adidas Originals"), because adding a related brand only adds results.
+- **Gender filters are generous** (`GENDER_MATCHES` in `vocabulary.py`): "women" also returns
+  unisex products, "men" too; "kids" returns kids + girls + boys; "girls"/"boys" also return kids.
+  Adding a product that fits only adds results; leaving it out hides it. Products with no gender
+  (~2%) are excluded whenever a gender filter applies.
+- **Filters use the indexes:** brand as `lower(brand) IN (...)` (expression index), gender and color
+  as JSONB containment `attributes @> '{"color": "black"}'` (GIN index; `->>` can't use it). All
+  values are bound parameters.
 - **Shared vocabulary:** the query parser and ingest use the same gender and color values
   (e.g. "grey" -> `gray` on both sides), so query filters always match stored attributes.
 - **Soft preferences -> ranking.** "breathable", "wide feet", "for hiking" stay in the
@@ -97,6 +104,74 @@ So each query is split before retrieval:
   Never silently drop the constraint.
 - **Transparency:** the UI shows the applied filters as chips ("price <= $100") so users can
   see and remove a wrong interpretation.
+
+## Retrieval (M1 step 4)
+`src/catalog_copilot/search/retrieval.py`. Both searches take the same SQL filters
+(`search/filters.py`) and return product ids, best first; only the order matters to RRF.
+
+**Keyword search** (Postgres full-text on `search_tsv`, top 50):
+- **All words first, then any word.** `websearch_to_tsquery` requires every word. That is precise
+  for short queries but starves long ones (measured at 30K: "rain jacket" 174 matches, "breathable
+  running shoes for wide feet" 4, "non slip shoes for nurses" 13). When the all-words query returns
+  fewer than 50, products matching *any* word fill the remaining slots, always ranked below every
+  all-words match (progressive relaxation).
+- **Ranking: `ts_rank_cd`** (cover density: rewards query words close together; uses the title A >
+  brand B > text C weights). Plain `ts_rank` saturates near 1.0 under AND, so top results tie.
+  Ties are broken by product id so results are repeatable.
+- Queries use the same text-search config as `search_tsv` (`TEXT_SEARCH_CONFIG = "english"`), or
+  query words would stem differently from stored words.
+- Latency at 30K: 1.5-4 ms when all words fill 50; 35-67 ms when the any-word pass runs (it ranks
+  thousands of loose matches). Acceptable next to the reranker; revisit at the 1M scale run.
+- Negation ("not leather") isn't supported in M1: "not" is a stop word, so "leather" is searched.
+  The M2 LLM parser handles exclusions.
+
+**Vector search** (pgvector, top 50):
+- `vector_search(session, query_vector, filters)`: `ORDER BY embedding <=> :query_vector` (cosine
+  distance), id as tie-breaker. It takes the vector, not the text: the service embeds once with
+  BGE `query_embed` (the model that embedded products at ingest), and tests use hand-made vectors.
+- Exact scan over the filtered rows (no vector index at 30K, ADR 0006). Measured: BGE embedding
+  ~2-3 ms; search ~46-53 ms with no filters (all 29,990 rows), ~3-4 ms when filters narrow the rows
+  first (e.g. women + black + under $100 = 482 rows).
+
+**Why both searches:** their top 50s overlap little for vague queries and a lot for specific ones
+(30K, same filters): "outfit for a beach wedding" 6 of 50, "something for my wife" 10, "warm winter
+coat" 18, "Nike running shoes" 43. Each finds products the other misses, so RRF merges them.
+
+**RRF merge** (`search/fusion.py`): each product scores `1 / (60 + rank)` in each list it appears in,
+summed. Only positions count, because `ts_rank_cd` and cosine distance are on different scales.
+A product both searches rank well beats one that only a single search ranks first: for "warm winter
+coat" the top fused result was keyword #2 / vector #6, while keyword #1 (vector #27) fell to 6th.
+Ties go to the better single rank, then id. 100 candidates merge to ~80-90 unique in < 0.1 ms.
+
+**Rerank** (`search/rerank.py`, MiniLM cross-encoder `Xenova/ms-marco-MiniLM-L-6-v2`): reads the
+query and one product's text together and returns one relevance score (an unbounded logit, higher =
+more relevant). Behind a `Reranker` Protocol so tests use a fake.
+- **Input text = the full `search_text`** (title, brand, category, attributes, features). The longest
+  are ~240 MiniLM tokens (median 151), well inside the 512-token limit. Dropping the features changed
+  6 of the top 10 (agreement with full text: 4.0 / 10), so features stay.
+- **Only the RRF top 30 are scored** (`CC_RERANK_CANDIDATES`, default 30). Cost grows with the number
+  of candidates: all ~85 took ~780 ms on an 18-core laptop, the top 30 ~160-240 ms and kept 7.8 of the
+  full-rerank top 10 (titles only: 153 ms but 4.0 / 10). Lower it on small servers; M4 evals tune it.
+- Equal scores keep the incoming RRF order.
+
+**The `search()` service** (`search/service.py`): `SearchService.search(query, limit=10)` runs parse ->
+filters -> keyword -> embed -> vector -> RRF -> fetch -> rerank and returns a `SearchResponse` (the
+parsed query, results, candidate count and per-stage timings). Models and the brand list are loaded
+once by `create_search_service()` (~0.8 s); each search uses a fresh DB session.
+- Each `SearchHit` carries its keyword, vector and RRF positions plus the rerank score, so any ranking
+  can be explained and evaluated (M4).
+- The reranker reads `semantic_text`, not the full query: filters are already enforced by SQL, and
+  "under $100" would only distract it.
+- It scores `max(limit, rerank_candidates)` candidates, so every returned result has been reranked
+  even when the setting is lowered on a small server. `limit` is 1-50.
+- **Filter-only queries** ("Nike", "women's black under $100") have nothing to rank by meaning: matching
+  products are listed cheapest first (stable and explainable; the catalog has no popularity field yet).
+- Measured on the 30K catalog (18-core laptop): 200-350 ms per search, of which the reranker is
+  170-320 ms; filter-only ~6 ms.
+- Observation for M4: rerank scores are all negative for vague queries ("something for my wife": -2.2
+  to -2.8) and a weak extra result can scrape into the top 5 (joggers at -6.3 among hoodies). A score
+  floor or "low confidence" flag is a candidate for the eval-driven tuning in M4 and the "I don't know"
+  behavior in M2; not applied yet because scores are relative.
 
 ## Data model
 - **products:** `id` (ASIN), `title`, `brand`, `category_path`, `price`, `attributes` (JSONB:

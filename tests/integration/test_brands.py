@@ -1,28 +1,20 @@
 """Loading the brand matcher from a real Postgres catalog."""
 
 from collections.abc import Iterator
-from decimal import Decimal
 
 import pytest
 from sqlalchemy import Engine, delete
 from sqlalchemy.orm import Session
 
-from catalog_copilot.db.models import EMBEDDING_DIM, Product
+from catalog_copilot.db.models import Product
 from catalog_copilot.search.brands import load_brand_matcher
+from tests.integration.factories import make_product
 
 pytestmark = pytest.mark.integration
 
 
 def product(asin: str, brand: str | None, title: str) -> Product:
-    return Product(
-        id=asin,
-        title=title,
-        brand=brand,
-        price=Decimal("10.00"),
-        attributes={},
-        search_text=title,
-        embedding=[0.0] * EMBEDDING_DIM,
-    )
+    return make_product(asin, title, brand=brand)
 
 
 @pytest.fixture

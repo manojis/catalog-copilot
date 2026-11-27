@@ -41,3 +41,17 @@ GENDER_WORDS: Final[dict[str, Gender]] = {
     "baby": "baby", "babys": "baby", "infant": "baby", "infants": "baby",
     "unisex": "unisex",
 }  # fmt: skip
+
+
+# Which stored genders satisfy a gender filter. Generous on purpose: unisex products fit women and
+# men, and "kids" covers girls and boys. Adding a fitting product only adds results; leaving it out
+# hides it (ADR 0007).
+GENDER_MATCHES: Final[dict[Gender, tuple[Gender, ...]]] = {
+    "women": ("women", "unisex"),
+    "men": ("men", "unisex"),
+    "kids": ("kids", "girls", "boys"),
+    "girls": ("girls", "kids"),
+    "boys": ("boys", "kids"),
+    "baby": ("baby",),
+    "unisex": ("unisex",),
+}
