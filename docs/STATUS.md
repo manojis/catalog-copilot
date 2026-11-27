@@ -3,10 +3,10 @@
 _Last updated: 2026-11-26. Update this file at the end of every milestone._
 
 ## Current phase
-Phase 4: building M1 (steps 1-5 of 6 built; step 5 not yet merged).
+Phase 4: M1 built (all 6 steps); step 6 not yet merged. Next: M2 (after Augment/Generate lessons).
 
 ## Milestones
-- [ ] M1 Catalog + hybrid search: **in progress**
+- [x] M1 Catalog + hybrid search: **built** (step 6 in review)
 - [ ] M2 RAG Q&A + web UI
 - [ ] M3 CI/CD + live deploy (Fly.io)
 - [ ] M4 Eval gate
@@ -63,14 +63,18 @@ See README Quick start: docker compose → alembic upgrade → ingest download +
 - 2026-11-26: `GET /search` (step 5): service built once at startup, fail fast if the database is
   unreachable; sync endpoint (blocking work runs in a worker thread); 422 for bad `q`/`limit`, 503 for
   database outages; app logging configured so each search logs its timings.
+- 2026-11-27: M1 constraint check (step 6): 43 golden queries with limits written from intent;
+  99.2% of returned products satisfy every stated limit (target 95%), parse accuracy 95.3%, 0 false
+  filters on traps, p50 263 ms / p95 370 ms. Baseline for the M2 LLM parser. Runs as
+  `catalog-copilot-eval-constraints` and `pytest -m e2e`.
 
 ## M1 progress
 - [x] Step 1: Postgres + pgvector (docker compose), `products` model, migration 0001, tests
 - [x] Step 2: ingest 30K products (download, clean, embed, load): 29,990 loaded, 12.6 min
 - [x] Step 3: rule-based query parser + table-driven tests (PRs #3, #4)
 - [x] Step 4: filters, keyword + vector retrieval, RRF, rerank, `search()` service (PR #5)
-- [x] Step 5: `GET /search` (branch `feat/m1-search-api`)
-- [ ] Step 6: end-to-end testing (incl. constraint satisfaction)
+- [x] Step 5: `GET /search` (PR #6)
+- [x] Step 6: end-to-end constraint check: 99.2% satisfaction (target 95%) (branch `feat/m1-e2e-constraints`)
 
 ### M1 pieces by side
 
@@ -95,7 +99,7 @@ See README Quick start: docker compose → alembic upgrade → ingest download +
 | 4 | Shopper | rerank (cross-encoder) | done | MiniLM rescores the RRF top 30 (full `search_text`) and keeps the best |
 | 4 | Shopper | `search()` service | done | Runs the whole pipeline; per-stage timings; filter-only queries |
 | 5 | Shopper | `GET /search?q=...` | done | The API the shopper calls; returns ranked products as JSON |
-| 6 | Both | end-to-end tests | next | Real queries on real data; "under $100" results really are under $100 |
+| 6 | Both | end-to-end tests | done | 43 golden queries on the real catalog: 99.2% of results satisfy every stated limit |
 | Later | Ingest | full-refresh mode | later | Removes rows that a stricter cleaning rule now rejects |
 | Later | Ingest | HNSW index (migration 0002) | later | Fast approximate vector search for the 1M scale run |
 | Later | Ingest | 1M load + recall check | later | Measures HNSW vs exact search on real embeddings |

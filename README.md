@@ -88,9 +88,12 @@ Step-by-step diagrams, the role of each file, a real stored product and data qua
 ```bash
 uv run ruff check . && uv run ruff format --check .
 uv run mypy
-uv run pytest              # integration tests start a throwaway Postgres container
-uv run pytest -m "not integration"   # unit tests only, no Docker needed
+uv run pytest              # unit + integration (integration starts a throwaway Postgres container)
+uv run pytest -m "not integration and not e2e"   # unit tests only, no Docker needed
+uv run pytest -m e2e       # end-to-end check on the loaded local catalog with the real models
+uv run catalog-copilot-eval-constraints   # constraint-satisfaction report (see evals/README.md)
 ```
+A command-line `-m` replaces the default `-m 'not e2e'`, so name `e2e` explicitly when filtering.
 
 ### Database schema changes
 
@@ -114,10 +117,13 @@ src/catalog_copilot/
   vocabulary.py             gender/color values shared by ingest and the query parser
   db/                       SQLAlchemy models and sessions
   ingest/                   download + load pipeline
-  search/                   query parser (filters + leftover text), brand matching
+  search/                   query parser, filters, keyword/vector retrieval, RRF, rerank, service
+  evals/                    offline evaluations (constraint satisfaction)
 migrations/versions/        Alembic migrations (0001: products table)
 tests/unit/                 fast tests, no Docker (table-driven where rules have many cases)
 tests/integration/          tests against a throwaway Postgres container (testcontainers)
+tests/e2e/                  checks on the loaded local catalog with real models (pytest -m e2e)
+evals/                      golden datasets and reports (see evals/README.md)
 data/raw/                   downloaded snapshots (git-ignored)
 docs/                       PRD, DESIGN, STATUS, INGEST, adr/ (architecture decision records)
 ```
@@ -128,6 +134,7 @@ docs/                       PRD, DESIGN, STATUS, INGEST, adr/ (architecture deci
 - [Status](docs/STATUS.md)
 - [Ingest](docs/INGEST.md)
 - [Architecture decision records](docs/adr/README.md)
+- [Evals](evals/README.md)
 
 ## Data
 Product data from [Amazon Reviews 2023](https://amazon-reviews-2023.github.io/) (McAuley Lab),

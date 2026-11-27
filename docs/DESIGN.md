@@ -191,6 +191,19 @@ once by `create_search_service()` (~0.8 s); each search uses a fresh DB session.
   so each search logs its query, result count and per-stage timings. Level: `CC_LOG_LEVEL`.
 - Prices are JSON strings (Pydantic's Decimal encoding): exact, no float rounding.
 
+## Constraint check (M1 step 6)
+`src/catalog_copilot/evals/constraints.py`, details and baseline in [evals/README.md](../evals/README.md).
+- 43 golden queries with the limits a human reads in them, written **from intent, not from the
+  parser's output**, so parser misses surface as violations. 7 trap queries must create no filter.
+- Each returned product is checked against the expected limits (price with the inclusive flags,
+  brand family, generous gender, exact color). Reports constraint satisfaction (PRD >= 95%), parse
+  accuracy (baseline for the M2 LLM parser), false filters, zero-result queries, latency.
+- Runs as `catalog-copilot-eval-constraints` (exits non-zero below target, ready for the M4 gate)
+  and as `pytest -m e2e` (excluded from the default run; needs the loaded catalog and real models).
+- M1 baseline: **99.2%** satisfaction, 95.3% parse accuracy, 0 false filters, p50 263 ms / p95 370 ms.
+  Only the two known rule misses fail ("for him", "a hundred dollars").
+- Blind spot: checks stored attributes, so ingest labeling errors are invisible; M4 adds human labels.
+
 ## Data model
 - **products:** `id` (ASIN), `title`, `brand`, `category_path`, `price`, `attributes` (JSONB:
   gender, color, material), `description`, `url`, `search_text` (the product string that BGE
@@ -204,9 +217,9 @@ once by `create_search_service()` (~0.8 s); each search uses a fresh DB session.
   indexes so filtered search stays fast.
 - Schema changes go through Alembic migrations in `migrations/versions/`
   ([ADR 0002](adr/0002-alembic-migrations.md)).
-- **Eval datasets (files, versioned in git):** `evals/datasets/{qa,extraction,taxonomy,guardrails}.jsonl`;
-  scores in `evals/baseline.json`. QA cases with constraints carry an `expected_filters`
-  field (see M4).
+- **Eval datasets (files, versioned in git):** `evals/datasets/`. M1 has
+  `search_constraints.json` (see below); M4 adds `{qa,extraction,taxonomy,guardrails}.jsonl`.
+  Reports go to `evals/reports/`.
 
 ## Ingest
 Details and diagrams: [INGEST.md](INGEST.md). Decision: [ADR 0005](adr/0005-two-stage-ingest.md).

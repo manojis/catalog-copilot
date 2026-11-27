@@ -1,0 +1,54 @@
+{
+  "description": "M1 golden set: shopper queries with the hard limits a human reads in them. Expectations are written from the shopper's intent, independently of the parser, so parser misses show up as violations. 'trap' cases must create no filter.",
+  "cases": [
+    {"id": "price-under", "query": "running shoes under $100", "expect": {"price_max": "100", "price_max_inclusive": false}},
+    {"id": "price-below", "query": "winter jacket below $80", "expect": {"price_max": "80", "price_max_inclusive": false}},
+    {"id": "price-up-to", "query": "sandals up to $40", "expect": {"price_max": "40"}},
+    {"id": "price-over", "query": "watch over $150", "expect": {"price_min": "150", "price_min_inclusive": false}},
+    {"id": "price-at-least", "query": "leather boots at least $60", "expect": {"price_min": "60"}},
+    {"id": "price-between", "query": "dress between $30 and $60", "expect": {"price_min": "30", "price_max": "60"}},
+    {"id": "price-dash-range", "query": "hoodie $20-$40", "expect": {"price_min": "20", "price_max": "40"}},
+    {"id": "price-bare-number", "query": "jeans under 50", "expect": {"price_max": "50", "price_max_inclusive": false}},
+    {"id": "price-dollars-word", "query": "sneakers less than 70 dollars", "expect": {"price_max": "70", "price_max_inclusive": false}},
+    {"id": "price-and-up", "query": "backpack $25 and up", "expect": {"price_min": "25"}},
+
+    {"id": "gender-womens", "query": "women's rain boots", "expect": {"gender": "women"}},
+    {"id": "gender-mens", "query": "mens dress shirt", "expect": {"gender": "men"}},
+    {"id": "gender-for-men", "query": "running shorts for men", "expect": {"gender": "men"}},
+    {"id": "gender-ladies", "query": "ladies cardigan", "expect": {"gender": "women"}},
+    {"id": "gender-kids", "query": "kids winter boots", "expect": {"gender": "kids"}},
+    {"id": "gender-girls", "query": "girls' party dress", "expect": {"gender": "girls"}},
+    {"id": "gender-boys", "query": "boys swim trunks", "expect": {"gender": "boys"}},
+    {"id": "gender-baby", "query": "baby onesie", "expect": {"gender": "baby"}},
+
+    {"id": "color-black", "query": "black leather jacket", "expect": {"color": "black"}},
+    {"id": "color-grey-alias", "query": "grey hoodie", "expect": {"color": "gray"}},
+    {"id": "color-navy", "query": "navy blazer", "expect": {"color": "navy"}},
+    {"id": "color-white", "query": "white sneakers", "expect": {"color": "white"}},
+    {"id": "color-red", "query": "red dress", "expect": {"color": "red"}},
+
+    {"id": "brand-nike", "query": "Nike running shoes", "expect": {"brands": ["Nike"]}},
+    {"id": "brand-under-armour", "query": "Under Armour hoodie", "expect": {"brands": ["Under Armour"]}},
+    {"id": "brand-columbia", "query": "Columbia rain jacket", "expect": {"brands": ["Columbia"]}},
+    {"id": "brand-levis-no-apostrophe", "query": "levis jeans", "expect": {"brands": ["Levi's"]}},
+    {"id": "brand-skechers", "query": "Skechers slip on shoes", "expect": {"brands": ["Skechers"]}},
+
+    {"id": "combo-women-black-under", "query": "women's black running shoes under $100", "expect": {"gender": "women", "color": "black", "price_max": "100", "price_max_inclusive": false}},
+    {"id": "combo-men-brand-under", "query": "men's Columbia jacket under $120", "expect": {"gender": "men", "brands": ["Columbia"], "price_max": "120", "price_max_inclusive": false}},
+    {"id": "combo-girls-pink-under", "query": "girls pink sneakers under $40", "expect": {"gender": "girls", "color": "pink", "price_max": "40", "price_max_inclusive": false}},
+    {"id": "combo-brand-men-under", "query": "Under Armour hoodie for men under $50", "expect": {"brands": ["Under Armour"], "gender": "men", "price_max": "50", "price_max_inclusive": false}},
+    {"id": "combo-white-nike-women", "query": "white Nike sneakers for women", "expect": {"brands": ["Nike"], "color": "white", "gender": "women"}},
+
+    {"id": "phrasing-gift-under", "query": "something for my wife under $50", "expect": {"price_max": "50", "price_max_inclusive": false}, "note": "'wife' doesn't state a product gender; only the price is a stated limit"},
+    {"id": "phrasing-for-him-bucks", "query": "jacket for him under 100 bucks", "expect": {"gender": "men", "price_max": "100", "price_max_inclusive": false}, "note": "'for him' is not in the rule vocabulary (expected parser miss)"},
+    {"id": "phrasing-number-in-words", "query": "running shoes less than a hundred dollars", "expect": {"price_max": "100", "price_max_inclusive": false}, "note": "numbers written as words aren't parsed (expected parser miss)"},
+
+    {"id": "trap-black-friday", "query": "black friday deals on sneakers", "expect": {}, "kind": "trap"},
+    {"id": "trap-two-genders", "query": "shoes for men and women", "expect": {}, "kind": "trap"},
+    {"id": "trap-boyfriend", "query": "boyfriend jeans", "expect": {}, "kind": "trap"},
+    {"id": "trap-size-number", "query": "size 10 boots", "expect": {}, "kind": "trap"},
+    {"id": "trap-everyday-brand-word", "query": "comfort fit jeans", "expect": {}, "kind": "trap"},
+    {"id": "plain-warm-coat", "query": "warm winter coat", "expect": {}, "kind": "trap"},
+    {"id": "plain-nurses", "query": "non slip shoes for nurses", "expect": {}, "kind": "trap"}
+  ]
+}

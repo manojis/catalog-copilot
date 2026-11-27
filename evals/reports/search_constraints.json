@@ -1,0 +1,500 @@
+{
+  "generated_at": "2026-11-27T06:28:56+00:00",
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "reranker_model": "Xenova/ms-marco-MiniLM-L-6-v2",
+  "limit": 10,
+  "cases": 43,
+  "products_checked": 351,
+  "products_satisfied": 348,
+  "constraint_satisfaction": 0.9915,
+  "target": 0.95,
+  "parse_accuracy": 0.9535,
+  "false_filters": 0,
+  "zero_result_cases": [],
+  "latency_ms_p50": 262.9,
+  "latency_ms_p95": 370.0,
+  "case_results": [
+    {
+      "id": "price-under",
+      "query": "running shoes under $100",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 221.6
+    },
+    {
+      "id": "price-below",
+      "query": "winter jacket below $80",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 285.2
+    },
+    {
+      "id": "price-up-to",
+      "query": "sandals up to $40",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 322.7
+    },
+    {
+      "id": "price-over",
+      "query": "watch over $150",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 235.6
+    },
+    {
+      "id": "price-at-least",
+      "query": "leather boots at least $60",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 351.7
+    },
+    {
+      "id": "price-between",
+      "query": "dress between $30 and $60",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 261.2
+    },
+    {
+      "id": "price-dash-range",
+      "query": "hoodie $20-$40",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 240.0
+    },
+    {
+      "id": "price-bare-number",
+      "query": "jeans under 50",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 485.1
+    },
+    {
+      "id": "price-dollars-word",
+      "query": "sneakers less than 70 dollars",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 266.6
+    },
+    {
+      "id": "price-and-up",
+      "query": "backpack $25 and up",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 338.6
+    },
+    {
+      "id": "gender-womens",
+      "query": "women's rain boots",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 225.3
+    },
+    {
+      "id": "gender-mens",
+      "query": "mens dress shirt",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 323.0
+    },
+    {
+      "id": "gender-for-men",
+      "query": "running shorts for men",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 247.7
+    },
+    {
+      "id": "gender-ladies",
+      "query": "ladies cardigan",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 278.6
+    },
+    {
+      "id": "gender-kids",
+      "query": "kids winter boots",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 224.9
+    },
+    {
+      "id": "gender-girls",
+      "query": "girls' party dress",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 233.5
+    },
+    {
+      "id": "gender-boys",
+      "query": "boys swim trunks",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 278.1
+    },
+    {
+      "id": "gender-baby",
+      "query": "baby onesie",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 212.5
+    },
+    {
+      "id": "color-black",
+      "query": "black leather jacket",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 304.8
+    },
+    {
+      "id": "color-grey-alias",
+      "query": "grey hoodie",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 302.7
+    },
+    {
+      "id": "color-navy",
+      "query": "navy blazer",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 292.7
+    },
+    {
+      "id": "color-white",
+      "query": "white sneakers",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 304.2
+    },
+    {
+      "id": "color-red",
+      "query": "red dress",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 328.2
+    },
+    {
+      "id": "brand-nike",
+      "query": "Nike running shoes",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 261.0
+    },
+    {
+      "id": "brand-under-armour",
+      "query": "Under Armour hoodie",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 210.0
+    },
+    {
+      "id": "brand-columbia",
+      "query": "Columbia rain jacket",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 241.7
+    },
+    {
+      "id": "brand-levis-no-apostrophe",
+      "query": "levis jeans",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 242.7
+    },
+    {
+      "id": "brand-skechers",
+      "query": "Skechers slip on shoes",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 262.9
+    },
+    {
+      "id": "combo-women-black-under",
+      "query": "women's black running shoes under $100",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 321.7
+    },
+    {
+      "id": "combo-men-brand-under",
+      "query": "men's Columbia jacket under $120",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 232.0
+    },
+    {
+      "id": "combo-girls-pink-under",
+      "query": "girls pink sneakers under $40",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 223.6
+    },
+    {
+      "id": "combo-brand-men-under",
+      "query": "Under Armour hoodie for men under $50",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 254.4
+    },
+    {
+      "id": "combo-white-nike-women",
+      "query": "white Nike sneakers for women",
+      "kind": "constraint",
+      "results": 1,
+      "satisfied": 1,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 22.4
+    },
+    {
+      "id": "phrasing-gift-under",
+      "query": "something for my wife under $50",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 257.8
+    },
+    {
+      "id": "phrasing-for-him-bucks",
+      "query": "jacket for him under 100 bucks",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 8,
+      "parse_differences": [
+        "gender: expected men, got None"
+      ],
+      "false_filter": false,
+      "violations": [
+        "LitBud Toddler Boys Jacket Cartoon Dinosaur Animal Zipper Pa: gender 'boys'",
+        "Dolpind Kpop Jacket Love Yourself Baseball Jacket Jimin Jung: gender 'boys'"
+      ],
+      "total_ms": 297.9
+    },
+    {
+      "id": "phrasing-number-in-words",
+      "query": "running shoes less than a hundred dollars",
+      "kind": "constraint",
+      "results": 10,
+      "satisfied": 9,
+      "parse_differences": [
+        "price_max: expected 100 (excl), got none"
+      ],
+      "false_filter": false,
+      "violations": [
+        "Topo Athletic Men's Pursuit Comfortable Zero Drop Trail Runn: price 139.95"
+      ],
+      "total_ms": 426.2
+    },
+    {
+      "id": "trap-black-friday",
+      "query": "black friday deals on sneakers",
+      "kind": "trap",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 370.0
+    },
+    {
+      "id": "trap-two-genders",
+      "query": "shoes for men and women",
+      "kind": "trap",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 255.9
+    },
+    {
+      "id": "trap-boyfriend",
+      "query": "boyfriend jeans",
+      "kind": "trap",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 295.8
+    },
+    {
+      "id": "trap-size-number",
+      "query": "size 10 boots",
+      "kind": "trap",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 330.6
+    },
+    {
+      "id": "trap-everyday-brand-word",
+      "query": "comfort fit jeans",
+      "kind": "trap",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 231.0
+    },
+    {
+      "id": "plain-warm-coat",
+      "query": "warm winter coat",
+      "kind": "trap",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 243.2
+    },
+    {
+      "id": "plain-nurses",
+      "query": "non slip shoes for nurses",
+      "kind": "trap",
+      "results": 10,
+      "satisfied": 10,
+      "parse_differences": [],
+      "false_filter": false,
+      "violations": [],
+      "total_ms": 282.1
+    }
+  ]
+}
